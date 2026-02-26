@@ -8,14 +8,15 @@
         /* 基本スタイル */
         * { 
             -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            -webkit-user-select: none; 
-            -ms-user-select: none;
-            -webkit-touch-callout: none; 
             box-sizing: border-box; 
-            touch-action: manipulation;
+            touch-action: pan-x pan-y;
         }
         
+        button, .mode-btn, .side-bar, .history-clear {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         body { 
             background-color: #0d0d0d; 
             color: #e0e0e0; 
@@ -39,14 +40,40 @@
             line-height: 1.6; font-weight: bold; z-index: 1000; box-shadow: 0 0 30px rgba(0,0,0,0.9);
         }
 
-        #display-container { flex: 0 0 14vh; display: flex; align-items: center; padding: 0 20px; background: #000; border-bottom: 1px solid #222; }
-        #display { width: 100%; font-size: clamp(2rem, 9vh, 4rem); text-align: right; border: none; background: transparent; color: #fff; outline: none; }
+        #display-container { 
+            flex: 0 0 14vh; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 20px; 
+            background: #000; 
+            border-bottom: 1px solid #222; 
+            overflow: hidden;
+        }
+        #display { 
+            width: 100%; 
+            font-size: clamp(2rem, 8vh, 4rem); 
+            text-align: right; 
+            border: none; 
+            background: transparent; 
+            color: #fff; 
+            outline: none; 
+            overflow-x: auto; 
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px 0;
+            min-height: 1.2em;
+            scrollbar-width: thin;
+            caret-color: #d4af37;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        #display::-webkit-scrollbar { height: 4px; }
+        #display::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
         .mode-selector { 
             display: flex; overflow-x: auto; background: #1a1a1a; flex: 0 0 auto; 
             scrollbar-width: none; -ms-overflow-style: none; border-bottom: 1px solid #333;
         }
-        .mode-selector::-webkit-scrollbar { display: none; }
         .mode-btn { 
             flex: 1 0 70px; height: 45px; font-size: 0.8rem; border: none; cursor: pointer; 
             background: #222; color: #888; font-weight: bold; white-space: nowrap; transition: 0.2s;
@@ -98,14 +125,7 @@
             writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 2px;
         }
 
-        #lang-select {
-            position: absolute;
-            opacity: 0;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-            font-size: 1.5rem; /* クリック時のメニュー文字サイズに影響 */
-        }
+        #lang-select { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; font-size: 1.5rem; }
 
         .hidden { display: none !important; }
         input[type="range"] { width: 100%; margin: 10px 0; -webkit-appearance: none; background: #333; height: 6px; border-radius: 3px; }
@@ -122,7 +142,7 @@
     <small>(クリックで閉じる)</small>
 </div>
 
-<div id="display-container"><input type="text" id="display" value="0" readonly></div>
+<div id="display-container"><div id="display" contenteditable="true" inputmode="none">0</div></div>
 
 <div class="mode-selector">
     <button class="mode-btn active" id="m-basic" onclick="showPanel('basic', this)">基本</button>
@@ -158,7 +178,7 @@
 
     <div id="panel-stats" class="ext-panel">
         <button id="s-avg" onclick="add('平均値(')">平均</button><button id="s-mid" onclick="add('中央値(')">中央</button>
-        <button id="s-mod" onclick="add('最頻値(')">最頻</button><button id="s-mul" onclick="add('×')">乗数</button>
+        <button id="s-mod" onclick="add('最頻値(')">最頻</button><button id="s-mul" onclick="add('^')">乗数</button>
         <button id="s-max" onclick="add('最大値(')">最大</button><button id="s-min" onclick="add('最小値(')">最小</button>
         <button class="op" onclick="add(',')">,</button><button class="op" onclick="add(')')">)</button>
     </div>
@@ -169,11 +189,11 @@
         <button onclick="add('e')">e</button><button onclick="add('log(')">log</button><button onclick="add('⁻')">(-)</button><button class="op" onclick="add(')')">)</button>
     </div>
 
-    <div id="panel-rate" class="ext-panel"><div class="premium-ui"><label id="l-rate-amt">金額</label><input type="text" id="rate-amount" value="1" oninput="forceAlphanumeric(this)"><div style="display:flex; gap:5px;"><div style="flex:1"><label id="l-rate-from">元</label><select id="rate-from"></select></div><div style="flex:1"><label id="l-rate-to">先</label><select id="rate-to"></select></div></div><button id="btn-calc-rate" class="calc-action-btn" onclick="fetchRate()">レート計算実行</button><div id="rate-result" class="result-box">---</div></div></div>
+    <div id="panel-rate" class="ext-panel"><div class="premium-ui"><label id="l-rate-amt">金額</label><input type="text" id="rate-amount" value="1"><div style="display:flex; gap:5px;"><div style="flex:1"><label id="l-rate-from">元</label><select id="rate-from"></select></div><div style="flex:1"><label id="l-rate-to">先</label><select id="rate-to"></select></div></div><button id="btn-calc-rate" class="calc-action-btn" onclick="fetchRate()">レート計算実行</button><div id="rate-result" class="result-box">---</div></div></div>
 
-    <div id="panel-tax" class="ext-panel"><div class="premium-ui"><label id="l-tax-amt">課税対象額</label><input type="text" id="tax-amount" value="50M" oninput="forceAlphanumeric(this)"><div id="tax-people-box" class="hidden"><label id="l-tax-people">法定相続人数: 1人</label><input type="range" id="tax-people-slider" min="1" max="10" value="1" oninput="updateTaxPeople(this.value)"></div><label id="l-tax-type">税目選択</label><select id="tax-type" onchange="toggleTaxUI()"></select><button id="btn-calc-tax" class="calc-action-btn" onclick="calcTaxAdvanced()">税金計算実行</button><div id="tax-result" class="result-box">---</div></div></div>
+    <div id="panel-tax" class="ext-panel"><div class="premium-ui"><label id="l-tax-amt">課税対象額</label><input type="text" id="tax-amount" value="50M"><div id="tax-people-box" class="hidden"><label id="l-tax-people">法定相続人数: 1人</label><input type="range" id="tax-people-slider" min="1" max="10" value="1" oninput="updateTaxPeople(this.value)"></div><label id="l-tax-type">税目選択</label><select id="tax-type" onchange="toggleTaxUI()"></select><button id="btn-calc-tax" class="calc-action-btn" onclick="calcTaxAdvanced()">税金計算実行</button><div id="tax-result" class="result-box">---</div></div></div>
 
-    <div id="panel-tc" class="ext-panel"><div class="premium-ui"><label id="l-tc-amt">対象金額</label><input type="text" id="tc-amount" value="1k" oninput="forceAlphanumeric(this)"><div id="tc-day-box" class="hidden"><label id="l-tc-day">1日あたりの使用量/時間</label><div style="position:relative;"><input type="text" id="tc-day-val" value="1" oninput="forceAlphanumeric(this)"><span id="unit-suffix" style="position:absolute; right:10px; top:12px; color:#888; pointer-events:none;"></span></div></div><div id="tc-salary-options"><label id="holiday-label">年間休日: 120日</label><input type="range" id="tc-holiday-slider" min="0" max="365" value="120" oninput="updateHolidayLabel(this.value)"><label id="l-tc-mode">給料区分</label><select id="tc-salary-mode"></select></div><label id="l-tc-type">項目</label><select id="tc-type" onchange="toggleTCUI()"></select><button id="btn-calc-tc" class="calc-action-btn" onclick="calcTC()">試算実行</button><div id="tax-result-tc" class="result-box"><span id="tc-res-text">---</span></div></div></div>
+    <div id="panel-tc" class="ext-panel"><div class="premium-ui"><label id="l-tc-amt">対象金額</label><input type="text" id="tc-amount" value="1k"><div id="tc-day-box" class="hidden"><label id="l-tc-day">1日あたりの使用量/時間</label><div style="position:relative;"><input type="text" id="tc-day-val" value="1"><span id="unit-suffix" style="position:absolute; right:10px; top:12px; color:#888; pointer-events:none;"></span></div></div><div id="tc-salary-options"><label id="holiday-label">年間休日: 120日</label><input type="range" id="tc-holiday-slider" min="0" max="365" value="120" oninput="updateHolidayLabel(this.value)"><label id="l-tc-mode">給料区分</label><select id="tc-salary-mode"></select></div><label id="l-tc-type">項目</label><select id="tc-type" onchange="toggleTCUI()"></select><button id="btn-calc-tc" class="calc-action-btn" onclick="calcTC()">試算実行</button><div id="tax-result-tc" class="result-box"><span id="tc-res-text">---</span></div></div></div>
 </div>
 
 <div class="bottom-area">
@@ -193,16 +213,144 @@
 <script>
     const disp = document.getElementById('display');
     let isCalculated = false, currentLang = 'ja';
+    let isBracketOpen = false;
+
     const pMap = {'Q':'1000000000000000000000000000000','R':'1000000000000000000000000000','Y':'1000000000000000000000000','Z':'1000000000000000000000','E':'1000000000000000000','P':'1000000000000000','T':'1000000000000','G':'1000000000','M':'1000000','k':'1000','h':'100','da':'10','d':'0.1','c':'0.01','m':'0.001','μ':'0.000001','n':'0.000000001','p':'0.000000000001','f':'0.000000000000001','a':'0.000000000000000001','z':'0.000000000000000000001','y':'0.000000000000000000000001','r':'0.000000000000000000000000001','q':'0.000000000000000000000000000001'};
 
-    function forceAlphanumeric(el) { el.value = el.value.replace(/[^\x00-\x7F]/g, ""); }
-    function parsePrefix(val) {
-        if (!val) return 0;
-        let s = String(val).trim();
-        const pKeys = Object.keys(pMap).sort((a,b) => b.length - a.length);
-        for (let p of pKeys) { if (s.endsWith(p)) { let base = s.slice(0, -p.length); return (base === "" ? 1 : parseFloat(base)) * Number(pMap[p]); } }
-        return parseFloat(s);
+    const tokens = ["sin(", "cos(", "tan(", "log(", "√(", "平均値(", "中央値(", "最頻値(", "最大値(", "最小値("];
+    const ops = ['+', '-', '×', '÷', '^', ','];
+    const limitTokens = ['.', '°', 'i', 'e', 'π'];
+
+    function setCursor(pos) {
+        disp.focus();
+        const sel = window.getSelection();
+        if (disp.childNodes.length > 0) {
+            const range = document.createRange();
+            const node = disp.childNodes[0];
+            const targetPos = Math.min(Math.max(0, pos), node.length);
+            range.setStart(node, targetPos);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
     }
+
+    function getSafePos() {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            if (range.startContainer === disp || range.startContainer.parentNode === disp) {
+                return range.startOffset;
+            }
+        }
+        return disp.innerText.length;
+    }
+
+    function insertAtCursor(text) {
+        let content = disp.innerText;
+        let pos = getSafePos();
+        let newPosAdjustment = text.length;
+
+        if (content === "0" && pos === 1 && text !== '.' && !ops.includes(text) && text !== '⁻') {
+            content = ""; pos = 0;
+        }
+
+        // --- 関数の切り替えロジック ---
+        // 括弧が開いている状態で、別の関数ボタン（sin(等）が押された場合
+        if (isBracketOpen && text.includes('(')) {
+            // 現在のカーソル位置付近にある未完成の関数を特定して削除
+            for (let t of tokens) {
+                let idx = content.lastIndexOf(t, pos - 1);
+                if (idx !== -1 && !content.substring(idx).includes(')')) {
+                    // その関数を削除して置き換える
+                    const before = content.substring(0, idx);
+                    const after = content.substring(pos);
+                    content = before + after;
+                    pos = idx;
+                    break;
+                }
+            }
+        } else if (isBracketOpen) {
+            // 通常のロック：括弧内での制限
+            const allowedInBracket = /^[0-9.,⁻]$/;
+            if (!allowedInBracket.test(text) && text !== ')') return;
+        }
+
+        // 演算子および特定記号の連続入力チェック
+        let prevChar = content[pos-1];
+        if (ops.includes(text) || limitTokens.includes(text)) {
+            if (ops.includes(prevChar) || limitTokens.includes(prevChar)) {
+                content = content.substring(0, pos-1) + content.substring(pos);
+                pos = pos - 1;
+            }
+        }
+
+        const finalStr = content.substring(0, pos) + text + content.substring(pos);
+
+        // ロックの更新
+        if (text.includes('(')) isBracketOpen = true;
+        if (text === ')') isBracketOpen = false;
+
+        window.getSelection().removeAllRanges();
+        disp.textContent = ""; 
+        
+        requestAnimationFrame(() => {
+            disp.textContent = finalStr;
+            requestAnimationFrame(() => {
+                setCursor(pos + newPosAdjustment);
+            });
+        });
+    }
+
+    function add(val) {
+        if (isCalculated) {
+            if (!ops.includes(val) && !limitTokens.includes(val) && val !== '⁻' && !val.includes('(')) disp.innerText = "0";
+            isCalculated = false;
+        }
+        insertAtCursor(val);
+        if (disp.scrollWidth > disp.clientWidth) disp.scrollLeft = disp.scrollWidth;
+    }
+
+    function backspace() {
+        let content = disp.innerText;
+        let pos = getSafePos();
+        if (pos === 0 || content === "0") return;
+
+        let start = pos - 1, end = pos;
+        for (let t of tokens) {
+            let idx = -1;
+            while ((idx = content.indexOf(t, idx + 1)) !== -1) {
+                if (pos > idx && pos <= idx + t.length) {
+                    start = idx; end = idx + t.length; break;
+                }
+            }
+        }
+
+        const newText = content.substring(0, start) + content.substring(end);
+        // ロック状態を再評価（開いている括弧があるか）
+        let openCount = (newText.match(/\(/g) || []).length;
+        let closeCount = (newText.match(/\)/g) || []).length;
+        isBracketOpen = openCount > closeCount;
+
+        window.getSelection().removeAllRanges();
+        disp.textContent = "";
+
+        requestAnimationFrame(() => {
+            disp.textContent = newText || "0";
+            requestAnimationFrame(() => {
+                setCursor(start);
+            });
+        });
+    }
+
+    function clearAll() { 
+        window.getSelection().removeAllRanges();
+        disp.textContent = "0"; 
+        isCalculated = false;
+        isBracketOpen = false;
+    }
+    
+    function clearHistory() { document.getElementById('history-list').innerHTML = ""; }
 
     const processStr = (s) => {
         let res = s.replace(/×/g,'*').replace(/÷/g,'/');
@@ -222,55 +370,49 @@
     const _max = (g) => { const n = getNums(g); return n.length ? Math.max(...n) : 0; };
     const _min = (g) => { const n = getNums(g); return n.length ? Math.min(...n) : 0; };
 
-    function toggleSummary() { const o = document.getElementById('summary-overlay'); o.style.display = (o.style.display === 'block') ? 'none' : 'block'; }
-    function showPanel(id, btn) { document.querySelectorAll('.keypad, .ext-panel').forEach(p => p.style.display = 'none'); document.getElementById('panel-' + id).style.display = 'grid'; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
-    
-    function add(val) {
-        const lastChar = disp.value.slice(-1);
-        const ops = ['+', '-', '×', '÷', '^', ',', '.'];
-        if (ops.includes(val) && ops.includes(lastChar)) { disp.value = disp.value.slice(0, -1) + val; return; }
-        if (disp.value === "0" || isCalculated) { if (!ops.includes(val)) { disp.value = val; isCalculated = false; return; } isCalculated = false; }
-        disp.value += val;
-    }
-
-    function backspace() {
-        const s = disp.value;
-        if (s === "0") return;
-        const tokens = ["sin(", "cos(", "tan(", "log(", "√(", "平均値(", "中央値(", "最頻値(", "最大値(", "最小値("];
-        for (let t of tokens) {
-            if (s.endsWith(t)) {
-                disp.value = s.slice(0, -t.length) || "0";
-                return;
-            }
-        }
-        disp.value = s.slice(0, -1) || "0";
-    }
-
-    function clearAll() { disp.value = "0"; isCalculated = false; }
-    function clearHistory() { document.getElementById('history-list').innerHTML = ""; }
-
     function calculate() {
+        if (isBracketOpen) return;
         try {
-            let originalInput = disp.value;
-            let s = originalInput;
-            s = s.replace(/平均値\((.*?)\)/g, (m, g) => _avg(g)).replace(/中央値\((.*?)\)/g, (m, g) => _mid(g))
-                 .replace(/最頻値\((.*?)\)/g, (m, g) => _mod(g)).replace(/最大値\((.*?)\)/g, (m, g) => _max(g)).replace(/最小値\((.*?)\)/g, (m, g) => _min(g));
-            s = processStr(s);
-            s = s.replace(/π/g,Math.PI).replace(/e/g,Math.E).replace(/⁻/g,'-').replace(/\^/g,'**')
-                 .replace(/√\((.*?)\)/g, 'Math.sqrt($1)').replace(/sin\((.*?)\)/g, 'Math.sin($1*Math.PI/180)')
-                 .replace(/cos\((.*?)\)/g, 'Math.cos($1*Math.PI/180)').replace(/tan\((.*?)\)/g, 'Math.tan($1*Math.PI/180)')
-                 .replace(/log\((.*?)\)/g, 'Math.log10($1)');
-            let res = eval(s);
-            if (Math.abs(res) >= 1e21 || (Math.abs(res) < 1e-7 && res !== 0)) { res = res.toExponential().replace(/\+/, ''); } 
-            else { res = parseFloat(Number(res).toPrecision(15)); }
+            let originalInput = disp.innerText;
+            if (originalInput === "0") return;
+            let parts = originalInput.split(/,(?![^\(]*\))/);
+            let results = parts.map(part => {
+                let s = part.trim();
+                s = s.replace(/平均値\((.*?)\)/g, (m, g) => _avg(g)).replace(/中央値\((.*?)\)/g, (m, g) => _mid(g))
+                     .replace(/最頻値\((.*?)\)/g, (m, g) => _mod(g)).replace(/最大値\((.*?)\)/g, (m, g) => _max(g)).replace(/最小値\((.*?)\)/g, (m, g) => _min(g));
+                s = processStr(s);
+                s = s.replace(/π/g,Math.PI).replace(/e/g,Math.E).replace(/⁻/g,'-').replace(/\^/g,'**')
+                     .replace(/√\((.*?)\)/g, 'Math.sqrt($1)').replace(/sin\((.*?)\)/g, 'Math.sin($1*Math.PI/180)')
+                     .replace(/cos\((.*?)\)/g, 'Math.cos($1*Math.PI/180)').replace(/tan\((.*?)\)/g, 'Math.tan($1*Math.PI/180)')
+                     .replace(/log\((.*?)\)/g, 'Math.log10($1)');
+                let res = eval(s);
+                if (typeof res === 'number') {
+                    if (Math.abs(res) >= 1e21 || (Math.abs(res) < 1e-7 && res !== 0)) return res.toExponential().replace(/\+/, '');
+                    return parseFloat(Number(res).toPrecision(15));
+                }
+                return res;
+            });
+            let finalOutput = results.join(', ');
             const log = document.getElementById('history-list');
             const item = document.createElement('div');
             item.style.borderBottom = "1px solid #222"; item.style.padding = "5px 0";
-            item.innerHTML = `<small>${new Date().toLocaleTimeString()}</small><br>${originalInput} = <b style="color:#d4af37">${res}</b>`;
-            log.prepend(item); disp.value = res; isCalculated = true;
-        } catch { disp.value = "Error"; isCalculated = true; }
+            item.innerHTML = `<small>${new Date().toLocaleTimeString()}</small><br>${originalInput} = <b style="color:#d4af37">${finalOutput}</b>`;
+            log.prepend(item);
+            disp.innerText = finalOutput;
+            isCalculated = true;
+            isBracketOpen = false;
+        } catch { disp.innerText = "Error"; isCalculated = true; }
     }
 
+    function toggleSummary() { const o = document.getElementById('summary-overlay'); o.style.display = (o.style.display === 'block') ? 'none' : 'block'; }
+    function showPanel(id, btn) { document.querySelectorAll('.keypad, .ext-panel').forEach(p => p.style.display = 'none'); document.getElementById('panel-' + id).style.display = 'grid'; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+    function parsePrefix(val) {
+        if (!val) return 0;
+        let s = String(val).trim();
+        const pKeys = Object.keys(pMap).sort((a,b) => b.length - a.length);
+        for (let p of pKeys) { if (s.endsWith(p)) { let base = s.slice(0, -p.length); return (base === "" ? 1 : parseFloat(base)) * Number(pMap[p]); } }
+        return parseFloat(s);
+    }
     async function fetchRate() {
         const resBox = document.getElementById('rate-result'); resBox.innerText = '...';
         try {
@@ -282,7 +424,6 @@
             resBox.innerHTML = `<span class="res-main">${amt.toLocaleString()}${from} = ${val.toLocaleString()}${to}</span>`;
         } catch { resBox.innerText = 'Error'; }
     }
-
     function calcTaxAdvanced() {
         const a = parsePrefix(document.getElementById('tax-amount').value);
         let tax = 0, type = document.getElementById('tax-type').value;
@@ -326,7 +467,6 @@
         } else if(type==='corp') tax = a * 0.232;
         document.getElementById('tax-result').innerHTML = `<span class="res-main">¥${Math.max(0, Math.floor(tax)).toLocaleString()}</span>`;
     }
-
     function calcTC() {
         const type = document.getElementById('tc-type').value;
         const dv = parsePrefix(document.getElementById('tc-day-val').value) || 0;
@@ -346,14 +486,12 @@
             const mc = (dv * 31) * 30; resEl.innerHTML = `Month: ¥${Math.floor(mc).toLocaleString()}<br>Year: ¥${Math.floor(mc * 12).toLocaleString()}`;
         } else { resEl.innerHTML = `Month: ¥${(dv*30).toLocaleString()}<br>Year: ¥${(dv*365).toLocaleString()}`; }
     }
-
     const langData = {
         ja: {title:"PREMIUM CALCULATOR", m1:"基本", m2:"接頭語", m3:"値数", m4:"科学", m5:"レート", m6:"税金", m7:"試算", hol:"年間休日: ", s1:"平均", s2:"中央", s3:"最頻", s4:"乗数", s5:"最大", s6:"最小", tax_opt:["所得税","住民税","消費税10%","消費税8%","法人税","贈与税","相続税"], sal_opt:["日当→年収","時給→年収","年収→日当/時給"], tc_opt:["給料","食費","水道","ガス","電気"]},
         en: {title:"PRM CALCULATOR", m1:"Basic", m2:"Prefix", m3:"Stats", m4:"Sci", m5:"Rate", m6:"Tax", m7:"Sim", hol:"Holidays: ", s1:"Avg", s2:"Mid", s3:"Mode", s4:"Mul", s5:"Max", s6:"Min", tax_opt:["Income","Residence","VAT10","VAT8","Corp","Gift","Inherit"], sal_opt:["Daily to Annual","Hourly to Annual","Annual to Day/Hour"], tc_opt:["Salary","Food","Water","Gas","Elec"]},
-        zh: {title:"高级计算器", m1:"基础", m2:"词缀", m3:"统计", m4:"科学", m5:"汇率", m6:"税务", m7:"模拟", hol:"年假: ", s1:"平均", s2:"中位", s3:"众数", s4:"乘数", s5:"最大值", s6:"最小值", tax_opt:["所得税","居住税","增值税10%","增值税8%","企业税","赠与税","遗产税"], sal_opt:["日薪→年薪","时薪→年薪","年薪→日/时"], tc_opt:["工资","伙食","水费","燃气","电费"]},
-        es: {title:"CALCULADORA PRM", m1:"Básico", m2:"Prefijo", m3:"Estad.", m4:"Cien.", m5:"Tasa", m6:"Impues.", m7:"Sim.", hol:"Vacaciones: ", s1:"Prom.", s2:"Med.", s3:"Moda", s4:"Mult.", s5:"Máx.", s6:"Mín.", tax_opt:["Renta","Residencia","IVA10","IVA8","Corp.","Donación","Sucesión"], sal_opt:["Diario→Anual","Hora→Anual","Anual→Día/Hora"], tc_opt:["Salario","Comida","Agua","Gas","Elect."]}
+        zh: {title:"高级计算器", m1:"基础", m2:"词綴", m3:"统计", m4:"科学", m5:"汇率", m6:"税务", m7:"模拟", hol:"年假: ", s1:"平均", s2:"中位", s3:"众数", s4:"乘数", s5:"最大值", s6:"最小值", tax_opt:["所得税","居住税","增值税10%","增值税8%","企业税","赠与税","遗产税"], sal_opt:["日薪→年薪","时薪→年薪","年薪→日/时"], tc_opt:["工资","伙食","水费","燃气","电费"]},
+        es: {title:"CALCULADORA PRM", m1:"Básico", m2:"Prefijo", m3:"Estad.", m4:"Cien.", m5:"Tasa", m6:"Impues.", m7:"Sim.", hol:"Vacaciones: ", s1:"Prom.", s2:"Med.", s3:"Moda", s4:"Mult.", s5:"Máx.", s6:"Mín.", tax_opt:["Renta","Residencia","IVA10","IVA8","Corp.","Donación","Sucesión"], sal_opt:["Diario→Anual","Hora→Anual","Anual→Día/Hour"], tc_opt:["Salario","Comida","Agua","Gas","Elect."]}
     };
-
     function changeLang(l) {
         currentLang = l; const d = langData[l] || langData.en;
         document.getElementById('main-title').innerText = d.title;
@@ -364,7 +502,6 @@
         updateSelect('tc-type', d.tc_opt, ['sal', 'food', 'water', 'gas', 'elec']);
         toggleTCUI();
     }
-
     function updateSelect(id, texts, vals) { const s = document.getElementById(id); s.innerHTML = ""; texts.forEach((t, i) => s.add(new Option(t, vals[i]))); }
     function updateTaxPeople(v) { document.getElementById('l-tax-people').innerText = `法定相続人数: ${v}人`; }
     function updateHolidayLabel(v) { document.getElementById('holiday-label').innerText = (langData[currentLang]?.hol || "Holidays: ") + v; }
@@ -385,7 +522,8 @@
     window.onload = () => {
         const cur = ["JPY","USD","EUR","GBP","CNY","KRW"]; const f = document.getElementById('rate-from'), t = document.getElementById('rate-to');
         cur.forEach(c => { f.add(new Option(c, c)); t.add(new Option(c, c)); }); f.value = "USD"; t.value = "JPY"; changeLang('ja');
-        document.querySelectorAll('input[type="text"]').forEach(i => { i.addEventListener('compositionstart', () => { i.value = ""; }); i.addEventListener('input', () => forceAlphanumeric(i)); });
+        disp.addEventListener('keydown', (e) => { if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault(); });
+        disp.addEventListener('focus', () => { if(disp.innerText === "0") requestAnimationFrame(() => setCursor(1)); });
     };
 </script>
 </body>
